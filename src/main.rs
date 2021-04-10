@@ -1,4 +1,7 @@
 use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+use sqlx::{Pool, Postgres};
+use std::env;
+use std::io::ErrorKind;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -7,7 +10,13 @@ async fn hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(hello))
+    dotenv::dotenv().ok();
+
+    let pool = Pool::<Postgres>::connect(&env::var("DATABASE_URL").expect("No DATABASE_URL set."))
+        .await
+        .map_err(|_| std::io::Error::new(ErrorKind::Other, "Failed to connect to DB."))?;
+
+    HttpServer::new(move || App::new().data(pool.clone()).service(hello))
         .bind("0.0.0.0:8080")?
         .run()
         .await

@@ -9,6 +9,6 @@ edition = "2018"
 [dependencies]
 log = "0.4.14"
 actix-web = "3"
-
-[dev-dependencies]
-actix-rt = "1"
+actix-rt = "1.1.1"
+sqlx = { version = "0.5.1", features = [ "postgres", "runtime-actix-rustls" ] }
+dotenv = "0.15"
