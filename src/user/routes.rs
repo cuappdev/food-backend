@@ -8,8 +8,7 @@ async fn find_all(db_pool: web::Data<PgPool>) -> impl Responder {
     let result = User::find_all(db_pool.get_ref()).await;
     match result {
         Ok(users) => HttpResponse::Ok().json(users),
-        _ => HttpResponse::BadRequest()
-            .body("Error trying to read all users from database"),
+        _ => HttpResponse::BadRequest().body("Error trying to read all users from database"),
     }
 }
 
@@ -23,10 +22,7 @@ async fn find(id: web::Path<i32>, db_pool: web::Data<PgPool>) -> impl Responder 
 }
 
 #[post("/user/")]
-async fn create(
-    user: web::Json<UserRequest>,
-    db_pool: web::Data<PgPool>,
-) -> impl Responder {
+async fn create(user: web::Json<UserRequest>, db_pool: web::Data<PgPool>) -> impl Responder {
     let result = User::create(user.into_inner(), db_pool.get_ref()).await;
     match result {
         Ok(user) => HttpResponse::Ok().json(user),
@@ -40,8 +36,7 @@ async fn update(
     user: web::Json<UserRequest>,
     db_pool: web::Data<PgPool>,
 ) -> impl Responder {
-    let result =
-        User::update(id.into_inner(), user.into_inner(), db_pool.get_ref()).await;
+    let result = User::update(id.into_inner(), user.into_inner(), db_pool.get_ref()).await;
     match result {
         Ok(user) => HttpResponse::Ok().json(user),
         _ => HttpResponse::BadRequest().body("User not found"),
@@ -54,8 +49,7 @@ async fn delete(id: web::Path<i32>, db_pool: web::Data<PgPool>) -> impl Responde
     match result {
         Ok(rows) => {
             if rows > 0 {
-                HttpResponse::Ok()
-                    .body(format!("Successfully deleted {} record(s)", rows))
+                HttpResponse::Ok().body(format!("Successfully deleted {} record(s)", rows))
             } else {
                 HttpResponse::BadRequest().body("User not found")
             }
@@ -71,5 +65,5 @@ pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(create);
     cfg.service(update);
     cfg.service(delete);
-//     cfg.service(session); // very much WIP lol
+    //  cfg.service(session); // very much WIP lol
 }

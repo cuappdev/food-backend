@@ -84,20 +84,20 @@ impl User {
 
     pub async fn create(user: UserRequest, pool: &PgPool) -> Result<User> {
         let mut tx = pool.begin().await?;
-        let user = sqlx::query("INSERT INTO users (user_id, first_name, last_name)
-        VALUES ($1, $2, $3) RETURNING user_id, first_name, last_name")
-            .bind(user.user_id)    
-            .bind(&user.first_name)
-            .bind(&user.last_name)
-            .map(|row: PgRow| {
-                User {
-                    user_id: row.get(0),
-                    first_name: row.get(1),
-                    last_name: row.get(2)
-                }
-            })
-            .fetch_one(&mut tx)
-            .await?;
+        let user = sqlx::query(
+            "INSERT INTO users (user_id, first_name, last_name)
+        VALUES ($1, $2, $3) RETURNING user_id, first_name, last_name",
+        )
+        .bind(user.user_id)
+        .bind(&user.first_name)
+        .bind(&user.last_name)
+        .map(|row: PgRow| User {
+            user_id: row.get(0),
+            first_name: row.get(1),
+            last_name: row.get(2),
+        })
+        .fetch_one(&mut tx)
+        .await?;
 
         tx.commit().await?;
         Ok(user)
@@ -105,20 +105,20 @@ impl User {
 
     pub async fn update(id: i32, user: UserRequest, pool: &PgPool) -> Result<User> {
         let mut tx = pool.begin().await.unwrap();
-        let user = sqlx::query("UPDATE users SET user_id = $1, first_name = $2,
-        last_name = $3 WHERE user_id = $1 RETURNING user_id, first_name, last_name")
-            .bind(id)    
-            .bind(&user.first_name)
-            .bind(&user.last_name)
-            .map(|row: PgRow| {
-                User {
-                    user_id: row.get(0),
-                    first_name: row.get(1),
-                    last_name: row.get(2)
-                }
-            })
-            .fetch_one(&mut tx)
-            .await?;
+        let user = sqlx::query(
+            "UPDATE users SET user_id = $1, first_name = $2,
+        last_name = $3 WHERE user_id = $1 RETURNING user_id, first_name, last_name",
+        )
+        .bind(id)
+        .bind(&user.first_name)
+        .bind(&user.last_name)
+        .map(|row: PgRow| User {
+            user_id: row.get(0),
+            first_name: row.get(1),
+            last_name: row.get(2),
+        })
+        .fetch_one(&mut tx)
+        .await?;
 
         tx.commit().await.unwrap();
         Ok(user)

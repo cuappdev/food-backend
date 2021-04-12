@@ -31,8 +31,7 @@ async fn main() -> Result<()> {
 
     let mut listenfd = ListenFd::from_env();
 
-    let database_url =
-        env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
     let db_pool = PgPool::new(&database_url).await?;
 
     let mut server = HttpServer::new(move || {
