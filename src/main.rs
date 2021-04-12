@@ -1,43 +1,58 @@
-use actix_web::{get, App, HttpResponse, HttpServer, Responder};
-use sqlx::{Pool, Postgres};
-use std::env;
-use std::io::ErrorKind;
+#[macro_use]
+extern crate log;
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use anyhow::Result;
+use dotenv::dotenv;
+use listenfd::ListenFd;
+use sqlx::postgres::PgPool;
+use std::env;
+
+// import user module (routes and model)
+mod user;
+
+// / handler
+async fn index() -> impl Responder {
+    HttpResponse::Ok().body(r#"
+        Available routes:
+        GET /users/ -> list of all users
+        POST /user/ -> create new user, example: { "id": 1, "first_name": "Shungo", "last_name": "Najima" }
+        GET /user/{id}/ -> show one user with requested id
+        PUT /user/{id}/ -> update user with requested id, example: { "id": 1, "first_name": "Sarasa", "last_name": "Najima" }
+        DELETE /user/{id} -> delete user with requested id
+    "#
+    )
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    dotenv::dotenv().ok();
+async fn main() -> Result<()> {
+    dotenv().ok();
+    env_logger::init();
 
-    let pool = Pool::<Postgres>::connect(&env::var("DATABASE_URL").expect("No DATABASE_URL set."))
-        .await
-        .map_err(|_| std::io::Error::new(ErrorKind::Other, "Failed to connect to DB."))?;
+    let mut listenfd = ListenFd::from_env();
 
-    HttpServer::new(move || App::new().data(pool.clone()).service(hello))
-        .bind("0.0.0.0:8080")?
-        .run()
-        .await
-}
+    let database_url =
+        env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
+    let db_pool = PgPool::new(&database_url).await?;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use actix_web::{http, test};
+    let mut server = HttpServer::new(move || {
+        App::new()
+            .data(db_pool.clone()) // pass database pool to application so we can access it inside handlers
+            .route("/", web::get().to(index))
+            .configure(user::init) // init routes
+    });
 
-    #[test]
-    fn one_eq_one() {
-        assert_eq!(1 + 1, 2);
-    }
+    server = match listenfd.take_tcp_listener(0)? {
+        Some(listener) => server.listen(listener)?,
+        None => {
+            let host = env::var("HOST").expect("HOST is not set in .env file");
+            let port = env::var("PORT").expect("PORT is not set in .env file");
+            server.bind(format!("{}:{}", host, port))?
+        }
+    };
 
-    #[actix_rt::test]
-    async fn test_index_ok() {
-        let mut app = test::init_service(App::new().service(hello)).await;
+    info!("Starting server");
+    server.run().await?;
 
-        let req = test::TestRequest::get().uri("/").to_request();
-        let resp = test::call_service(&mut app, req).await;
-        assert_eq!(resp.status(), http::StatusCode::OK);
-    }
+    Ok(())
 }
