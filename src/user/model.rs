@@ -1,6 +1,4 @@
-use actix_web::{Error, HttpRequest, HttpResponse, Responder};
 use anyhow::Result;
-use futures::future::{ready, Ready};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgPool;
 use sqlx::postgres::PgRow;
@@ -24,18 +22,18 @@ pub struct User {
 
 // implementation of Actix Responder for User struct so we can return
 // a User upon call to handler
-impl Responder for User {
-    type Error = Error;
-    type Future = Ready<Result<HttpResponse, Error>>;
-
-    fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-        let body = serde_json::to_string(&self).unwrap();
-        // create response and set content type
-        ready(Ok(HttpResponse::Ok()
-            .content_type("application/json")
-            .body(body)))
-    }
-}
+// impl Responder for User {
+//     type Error = Error;
+//     type Future = Ready<Result<HttpResponse, Error>>;
+//
+//     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
+//         let body = serde_json::to_string(&self).unwrap();
+//         // create response and set content type
+//         ready(Ok(HttpResponse::Ok()
+//             .content_type("application/json")
+//             .body(body)))
+//     }
+// }
 
 // Implementation for User struct, functions for read/write/update/delete
 // from db
@@ -132,6 +130,6 @@ impl User {
             .await?;
 
         tx.commit().await?;
-        Ok(deleted)
+        Ok(deleted.rows_affected())
     }
 }
