@@ -18,6 +18,11 @@
           "ordinal": 2,
           "name": "last_name",
           "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "session_token",
+          "type_info": "Text"
         }
       ],
       "parameters": {
@@ -28,12 +33,13 @@
       "nullable": [
         false,
         false,
+        false,
         false
       ]
     }
   },
-  "91dafa57942ec6a7c8d3a2faab8a9fc035455a955cd005b8194d7e57b8ab82a4": {
-    "query": "\n                SELECT user_id, first_name, last_name\n                    FROM users\n                ORDER BY user_id\n            ",
+  "b627464e8e2e490c09bf5b5e7a16f0b265ab8cbb796ddc24f5086b80610f06d2": {
+    "query": "\n                SELECT user_id, first_name, last_name, session_token\n                    FROM users\n                ORDER BY user_id\n            ",
     "describe": {
       "columns": [
         {
@@ -50,12 +56,18 @@
           "ordinal": 2,
           "name": "last_name",
           "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "session_token",
+          "type_info": "Text"
         }
       ],
       "parameters": {
         "Left": []
       },
       "nullable": [
+        false,
         false,
         false,
         false

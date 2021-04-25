@@ -10,6 +10,7 @@ pub struct UserRequest {
     pub user_id: i32,
     pub first_name: String,
     pub last_name: String,
+    pub id_token: String,
 }
 
 // struct to represent database record
@@ -18,22 +19,8 @@ pub struct User {
     pub user_id: i32,
     pub first_name: String,
     pub last_name: String,
+    pub session_token: String,
 }
-
-// implementation of Actix Responder for User struct so we can return
-// a User upon call to handler
-// impl Responder for User {
-//     type Error = Error;
-//     type Future = Ready<Result<HttpResponse, Error>>;
-//
-//     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-//         let body = serde_json::to_string(&self).unwrap();
-//         // create response and set content type
-//         ready(Ok(HttpResponse::Ok()
-//             .content_type("application/json")
-//             .body(body)))
-//     }
-// }
 
 // Implementation for User struct, functions for read/write/update/delete
 // from db
@@ -44,7 +31,7 @@ impl User {
         let mut users = vec![];
         let recs = sqlx::query!(
             r#"
-                SELECT user_id, first_name, last_name
+                SELECT user_id, first_name, last_name, session_token
                     FROM users
                 ORDER BY user_id
             "#
@@ -57,6 +44,7 @@ impl User {
                 user_id: rec.user_id,
                 first_name: rec.first_name,
                 last_name: rec.last_name,
+                session_token: rec.session_token,
             });
         }
 
@@ -77,22 +65,27 @@ impl User {
             user_id: rec.user_id,
             first_name: rec.first_name,
             last_name: rec.last_name,
+            session_token: rec.session_token,
         })
     }
 
     pub async fn create(user: UserRequest, pool: &PgPool) -> Result<User> {
+        let random_bytes: Vec<u8> = (0..64).map(|_| rand::random::<u8>()).collect();
+        let encoded_bytes = hex::encode(random_bytes.to_vec());
         let mut tx = pool.begin().await?;
         let user = sqlx::query(
-            "INSERT INTO users (user_id, first_name, last_name)
-        VALUES ($1, $2, $3) RETURNING user_id, first_name, last_name",
+            "INSERT INTO users (user_id, first_name, last_name, session_token)
+        VALUES ($1, $2, $3, $4) RETURNING user_id, first_name, last_name, session_token",
         )
         .bind(user.user_id)
         .bind(&user.first_name)
         .bind(&user.last_name)
+        .bind(encoded_bytes)
         .map(|row: PgRow| User {
             user_id: row.get(0),
             first_name: row.get(1),
             last_name: row.get(2),
+            session_token: row.get(3),
         })
         .fetch_one(&mut tx)
         .await?;
@@ -105,7 +98,7 @@ impl User {
         let mut tx = pool.begin().await.unwrap();
         let user = sqlx::query(
             "UPDATE users SET user_id = $1, first_name = $2,
-        last_name = $3 WHERE user_id = $1 RETURNING user_id, first_name, last_name",
+        last_name = $3 WHERE user_id = $1 RETURNING user_id, first_name, last_name, session_token",
         )
         .bind(id)
         .bind(&user.first_name)
@@ -114,6 +107,7 @@ impl User {
             user_id: row.get(0),
             first_name: row.get(1),
             last_name: row.get(2),
+            session_token: row.get(3),
         })
         .fetch_one(&mut tx)
         .await?;

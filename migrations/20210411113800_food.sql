@@ -1,4 +1,3 @@
--- Add migration script here
 CREATE TABLE users (
     user_id INTEGER NOT NULL,
     first_name TEXT NOT NULL,
